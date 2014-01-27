@@ -7,7 +7,7 @@ ASFLAGS=-m64 -I../include
 all: liblimit.a
 	cp $^ ../bin
 
-liblimit.a: limit.o limit_asm.o limit-cpp.o
+liblimit.a: limit.o limit_asm.o #limit-cpp.o
 	ar -crs $@ $^
 
 clean:

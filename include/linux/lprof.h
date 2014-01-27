@@ -40,7 +40,7 @@ struct lprof_stats {
 #define _GNU_SOURCE
 #endif
 
-#define __NR_lprof_config 299
+#define __NR_lprof_config 400
 
 static inline int
 sys_lprof_config(unsigned int op, unsigned int counter,
