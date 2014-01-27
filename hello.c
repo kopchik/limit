@@ -26,9 +26,9 @@ int main(void) {
     uint64_t br_last, brm_last, c, br, brm;
     size_t i;
  
-    lprof_init(1, EV_BRANCH_MISS);
+    lprof_init(1, EV_CYCLES);
     function_to_watch(); // Do something
-    lprof(1, c);        //Get cumulative cycles
+    lprof(1, c);
     printf("At Cycle: %7lu\n", c);
     lprof_close();
 }
