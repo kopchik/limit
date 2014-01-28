@@ -49,10 +49,10 @@ index 6abc172..f8df6fb 100644
  	 * and set up the GDT descriptor:
 diff --git a/arch/x86/kernel/cpu/lprof.c b/arch/x86/kernel/cpu/lprof.c
 new file mode 100644
-index 0000000..dbc4eb5
+index 0000000..00d3134
 --- /dev/null
 +++ b/arch/x86/kernel/cpu/lprof.c
-@@ -0,0 +1,489 @@
+@@ -0,0 +1,493 @@
 +/*
 + * Kernel support for LambdaProfiler, a userland, performance
 + * counter-based counter profiler.  Allows users with to configure
@@ -362,6 +362,7 @@ index 0000000..dbc4eb5
 +    unsigned long long pgc;
 +
 +    if (counter >= num_perf_counters) {
++    	printk(KERN_WARNING "lp_start(): counter %u is more than num_perf_counters=%u", counter, num_perf_counters);
 +	return -ENODEV;
 +    }
 +
@@ -376,12 +377,14 @@ index 0000000..dbc4eb5
 +    if (perf_counter_info[counter].num_tasks == 0) {
 +	//Reserve PCMx
 +	if (!reserve_perfctr_nmi(MSR_ARCH_PERFMON_PERFCTR0 + counter))
-+	    return -EBUSY;
++		printk(KERN_WARNING "lp_start(): reserve PCMx failed");
++		return -EBUSY;
 +	
 +	//Reserve PerfEvtSelx
 +	if (!reserve_evntsel_nmi(MSR_ARCH_PERFMON_EVENTSEL0 + counter)) {
-+	    release_perfctr_nmi(MSR_ARCH_PERFMON_PERFCTR0 + counter);
-+	    return -EBUSY;
++		release_perfctr_nmi(MSR_ARCH_PERFMON_PERFCTR0 + counter);
++		printk(KERN_WARNING "lp_start(): Reserve PerfEvtSelx failed");
++		return -EBUSY;
 +	}
 +    }
 +
@@ -416,6 +419,7 @@ index 0000000..dbc4eb5
 +    size_t i;
 +
 +    if (!(tsk->perf_counters_inuse & (1 << counter))) {
++	printk(KERN_WARNING __func__ "(): counter not in use");
 +	return -EINVAL;
 +    }
 +
@@ -451,7 +455,7 @@ index 0000000..dbc4eb5
 +	//Release resources back to kernel
 +	release_perfctr_nmi(MSR_ARCH_PERFMON_PERFCTR0 + counter);
 +	release_evntsel_nmi(MSR_ARCH_PERFMON_EVENTSEL0 + counter);
-+	//printk("Releasing counter %d to kernel\n", counter);
++	printk("Releasing counter %d to kernel\n", counter);
 +    }
 +    return 0;
 +}
@@ -542,6 +546,30 @@ index 0000000..dbc4eb5
 +	kfree(ptr);
 +    }
 +}
+diff --git a/arch/x86/kernel/cpu/perfctr-watchdog.c b/arch/x86/kernel/cpu/perfctr-watchdog.c
+index 2e8caf0..7e37805 100644
+--- a/arch/x86/kernel/cpu/perfctr-watchdog.c
++++ b/arch/x86/kernel/cpu/perfctr-watchdog.c
+@@ -109,11 +109,14 @@ int reserve_perfctr_nmi(unsigned int msr)
+ 
+ 	counter = nmi_perfctr_msr_to_bit(msr);
+ 	/* register not managed by the allocator? */
+-	if (counter > NMI_MAX_COUNTER_BITS)
+-		return 1;
+-
+-	if (!test_and_set_bit(counter, perfctr_nmi_owner))
+-		return 1;
++	if (counter > NMI_MAX_COUNTER_BITS) {
++		printk(KERN_WARNING "reserve_perfctr_nmi(%u) (counter=%u) failed at NMI_MAX_COUNTER_BITS. Stack:", msr, counter);
++		return 1;}
++
++	if (!test_and_set_bit(counter, perfctr_nmi_owner)) {
++		printk(KERN_WARNING "reserve_perfctr_nmi() failed at test_and_set_bit(%u, %lud). Stack:", counter, perfctr_nmi_owner);
++		dump_stack();
++		return 1;}
+ 	return 0;
+ }
+ EXPORT_SYMBOL(reserve_perfctr_nmi);
 diff --git a/arch/x86/syscalls/syscall_64.tbl b/arch/x86/syscalls/syscall_64.tbl
 index 38ae65d..3653bfe 100644
 --- a/arch/x86/syscalls/syscall_64.tbl
@@ -569,7 +597,7 @@ index b0ed422..8968574 100644
  	INIT_TRACE_IRQFLAGS						\
 diff --git a/include/linux/lprof.h b/include/linux/lprof.h
 new file mode 100644
-index 0000000..10a162e
+index 0000000..2a28ead
 --- /dev/null
 +++ b/include/linux/lprof.h
 @@ -0,0 +1,75 @@
