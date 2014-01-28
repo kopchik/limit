@@ -49,7 +49,7 @@ index 6abc172..f8df6fb 100644
  	 * and set up the GDT descriptor:
 diff --git a/arch/x86/kernel/cpu/lprof.c b/arch/x86/kernel/cpu/lprof.c
 new file mode 100644
-index 0000000..00d3134
+index 0000000..736a7c8
 --- /dev/null
 +++ b/arch/x86/kernel/cpu/lprof.c
 @@ -0,0 +1,493 @@
@@ -419,7 +419,7 @@ index 0000000..00d3134
 +    size_t i;
 +
 +    if (!(tsk->perf_counters_inuse & (1 << counter))) {
-+	printk(KERN_WARNING __func__ "(): counter not in use");
++	printk(KERN_WARNING "lp_stop(): counter not in use");
 +	return -EINVAL;
 +    }
 +
