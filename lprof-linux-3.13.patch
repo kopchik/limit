@@ -49,7 +49,7 @@ index 6abc172..f8df6fb 100644
  	 * and set up the GDT descriptor:
 diff --git a/arch/x86/kernel/cpu/lprof.c b/arch/x86/kernel/cpu/lprof.c
 new file mode 100644
-index 0000000..736a7c8
+index 0000000..b6edde7
 --- /dev/null
 +++ b/arch/x86/kernel/cpu/lprof.c
 @@ -0,0 +1,493 @@
@@ -362,7 +362,7 @@ index 0000000..736a7c8
 +    unsigned long long pgc;
 +
 +    if (counter >= num_perf_counters) {
-+    	printk(KERN_WARNING "lp_start(): counter %u is more than num_perf_counters=%u", counter, num_perf_counters);
++    	printk(KERN_WARNING "lp_start(): counter %u is more than num_perf_counters=%u\n", counter, num_perf_counters);
 +	return -ENODEV;
 +    }
 +
@@ -377,13 +377,13 @@ index 0000000..736a7c8
 +    if (perf_counter_info[counter].num_tasks == 0) {
 +	//Reserve PCMx
 +	if (!reserve_perfctr_nmi(MSR_ARCH_PERFMON_PERFCTR0 + counter))
-+		printk(KERN_WARNING "lp_start(): reserve PCMx failed");
++		printk(KERN_WARNING "lp_start(): reserve PCMx failed\n");
 +		return -EBUSY;
 +	
 +	//Reserve PerfEvtSelx
 +	if (!reserve_evntsel_nmi(MSR_ARCH_PERFMON_EVENTSEL0 + counter)) {
 +		release_perfctr_nmi(MSR_ARCH_PERFMON_PERFCTR0 + counter);
-+		printk(KERN_WARNING "lp_start(): Reserve PerfEvtSelx failed");
++		printk(KERN_WARNING "lp_start(): Reserve PerfEvtSelx failed\n");
 +		return -EBUSY;
 +	}
 +    }
@@ -419,7 +419,7 @@ index 0000000..736a7c8
 +    size_t i;
 +
 +    if (!(tsk->perf_counters_inuse & (1 << counter))) {
-+	printk(KERN_WARNING "lp_stop(): counter not in use");
++	printk(KERN_WARNING "lp_stop(): counter not in use\n");
 +	return -EINVAL;
 +    }
 +
@@ -547,10 +547,10 @@ index 0000000..736a7c8
 +    }
 +}
 diff --git a/arch/x86/kernel/cpu/perfctr-watchdog.c b/arch/x86/kernel/cpu/perfctr-watchdog.c
-index 2e8caf0..7e37805 100644
+index 2e8caf0..18f0053 100644
 --- a/arch/x86/kernel/cpu/perfctr-watchdog.c
 +++ b/arch/x86/kernel/cpu/perfctr-watchdog.c
-@@ -109,11 +109,14 @@ int reserve_perfctr_nmi(unsigned int msr)
+@@ -109,11 +109,15 @@ int reserve_perfctr_nmi(unsigned int msr)
  
  	counter = nmi_perfctr_msr_to_bit(msr);
  	/* register not managed by the allocator? */
@@ -560,11 +560,12 @@ index 2e8caf0..7e37805 100644
 -	if (!test_and_set_bit(counter, perfctr_nmi_owner))
 -		return 1;
 +	if (counter > NMI_MAX_COUNTER_BITS) {
-+		printk(KERN_WARNING "reserve_perfctr_nmi(%u) (counter=%u) failed at NMI_MAX_COUNTER_BITS. Stack:", msr, counter);
++		printk(KERN_WARNING "reserve_perfctr_nmi(%u) (counter=%u) failed at NMI_MAX_COUNTER_BITS. Stack:\n", msr, counter);
++		dump_stack();
 +		return 1;}
 +
 +	if (!test_and_set_bit(counter, perfctr_nmi_owner)) {
-+		printk(KERN_WARNING "reserve_perfctr_nmi() failed at test_and_set_bit(%u, %lud). Stack:", counter, perfctr_nmi_owner);
++		printk(KERN_WARNING "reserve_perfctr_nmi() failed at test_and_set_bit(%u, %lud). Stack:\n", counter, perfctr_nmi_owner);
 +		dump_stack();
 +		return 1;}
  	return 0;
