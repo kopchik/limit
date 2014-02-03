@@ -92,6 +92,12 @@ int lprof_init(unsigned int num, ...) {
     return rc;
 }
 
+void lprof_debug(void) {
+  if(sys_lprof_config(LPROF_DBG)) {
+    perror("lprof_debug");
+  }
+}
+
 //Close each counter
 void lprof_close() {
     int i;
