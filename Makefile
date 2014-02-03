@@ -17,7 +17,7 @@ limit_asm.o: limit.h
 
 install:
 	cp liblimit.a /usr/local/lib
-	cp -r include/* /usr/local/include
+	cp limit.h /usr/local/include
 
 clean:
 	rm -f *.o *.i *.a *.s hello
