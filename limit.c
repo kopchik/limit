@@ -70,7 +70,7 @@ int lprof_init(unsigned int num, ...) {
 
     //Configure each counter, staring with 1
     va_start(args, num);
-    for (ctr=1; ctr<=num; ctr++) {
+    for (ctr=0; ctr<num; ctr++) {
 	size_t count = 0;
 	conf = va_arg(args, unsigned int) & 0xFFFF;;
 	printf("Configuring counter %d as %04x\n", ctr, conf);
