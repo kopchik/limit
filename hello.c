@@ -23,12 +23,14 @@ void function_to_watch(void) {
 }
  
 int main(void) {
-    uint64_t br_last, brm_last, c, br, brm;
+    uint64_t ins=0,cycles=0;
     size_t i;
  
-    lprof_init(1, EV_CYCLES);
+    lprof_init(2, EV_INSTR, EV_CYCLES);
+    lprof_debug();
     function_to_watch(); // Do something
-    lprof(1, c);
-    printf("At Cycle: %7lu\n", c);
-    lprof_close();
+    lprof(0, ins);
+    lprof(1, cycles);
+    printf("ins: %7lu\ncycles: %7lu\n", ins, cycles);
+    //lprof_close();
 }
