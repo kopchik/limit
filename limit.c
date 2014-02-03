@@ -93,7 +93,7 @@ int lprof_init(unsigned int num, ...) {
 }
 
 void lprof_debug(void) {
-  if(sys_lprof_config(LPROF_DBG)) {
+  if(sys_lprof_config(LPROF_DBG, 0, 0, 0)) {
     perror("lprof_debug");
   }
 }
@@ -101,7 +101,7 @@ void lprof_debug(void) {
 //Close each counter
 void lprof_close() {
     int i;
-    for (i=1; i<=num_ctrs; i++)
+    for (i=0; i<num_ctrs; i++)
 	sys_lprof_config(LPROF_STOP, i, 0, 0);
 }
 
