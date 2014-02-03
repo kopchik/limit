@@ -49,10 +49,10 @@ index 6abc172..f8df6fb 100644
  	 * and set up the GDT descriptor:
 diff --git a/arch/x86/kernel/cpu/lprof.c b/arch/x86/kernel/cpu/lprof.c
 new file mode 100644
-index 0000000..b6edde7
+index 0000000..e95786d
 --- /dev/null
 +++ b/arch/x86/kernel/cpu/lprof.c
-@@ -0,0 +1,493 @@
+@@ -0,0 +1,496 @@
 +/*
 + * Kernel support for LambdaProfiler, a userland, performance
 + * counter-based counter profiler.  Allows users with to configure
@@ -335,8 +335,10 @@ index 0000000..b6edde7
 +    }
 +
 +    //Get CPU info about performance counters and events
-+    cpuid(10, &eax.full, &dummy1, &dummy2, &edx.full);
-+    num_perf_counters = eax.split.num_counters;
++    //cpuid(10, &eax.full, &dummy1, &dummy2, &edx.full);
++    //num_perf_counters = eax.split.num_counters;
++    num_perf_counters = x86_pmu.num_counters;
++    printk("LPROF: number of supported counters: %\n", num_perf_counters);
 +    if (num_perf_counters > MAX_PMCS) {
 +	printk("LProf Warning: found %d counters, max of %d supported. Limiting.\n",
 +	       num_perf_counters, MAX_PMCS);
@@ -376,9 +378,10 @@ index 0000000..b6edde7
 +    //Reserve the request counter if we haven't already
 +    if (perf_counter_info[counter].num_tasks == 0) {
 +	//Reserve PCMx
-+	if (!reserve_perfctr_nmi(MSR_ARCH_PERFMON_PERFCTR0 + counter))
++	if (!reserve_perfctr_nmi(MSR_ARCH_PERFMON_PERFCTR0 + counter)) {
 +		printk(KERN_WARNING "lp_start(): reserve PCMx failed\n");
 +		return -EBUSY;
++	}
 +	
 +	//Reserve PerfEvtSelx
 +	if (!reserve_evntsel_nmi(MSR_ARCH_PERFMON_EVENTSEL0 + counter)) {
@@ -547,30 +550,66 @@ index 0000000..b6edde7
 +    }
 +}
 diff --git a/arch/x86/kernel/cpu/perfctr-watchdog.c b/arch/x86/kernel/cpu/perfctr-watchdog.c
-index 2e8caf0..18f0053 100644
+index 2e8caf0..68f7687 100644
 --- a/arch/x86/kernel/cpu/perfctr-watchdog.c
 +++ b/arch/x86/kernel/cpu/perfctr-watchdog.c
-@@ -109,11 +109,15 @@ int reserve_perfctr_nmi(unsigned int msr)
+@@ -108,12 +108,18 @@ int reserve_perfctr_nmi(unsigned int msr)
+ 	unsigned int counter;
  
  	counter = nmi_perfctr_msr_to_bit(msr);
++	printk(KERN_WARNING ">>> reserve_perfctr_nmi(%u) (counter=%u). Stack:\n", msr, counter);
++	dump_stack();
  	/* register not managed by the allocator? */
 -	if (counter > NMI_MAX_COUNTER_BITS)
 -		return 1;
--
--	if (!test_and_set_bit(counter, perfctr_nmi_owner))
--		return 1;
 +	if (counter > NMI_MAX_COUNTER_BITS) {
-+		printk(KERN_WARNING "reserve_perfctr_nmi(%u) (counter=%u) failed at NMI_MAX_COUNTER_BITS. Stack:\n", msr, counter);
-+		dump_stack();
++		printk(KERN_WARNING "<<< reserve_perfctr_nmi(%u) (counter=%u) failed at NMI_MAX_COUNTER_BITS.\n", msr, counter);
 +		return 1;}
-+
+ 
+-	if (!test_and_set_bit(counter, perfctr_nmi_owner))
 +	if (!test_and_set_bit(counter, perfctr_nmi_owner)) {
-+		printk(KERN_WARNING "reserve_perfctr_nmi() failed at test_and_set_bit(%u, %lud). Stack:\n", counter, perfctr_nmi_owner);
-+		dump_stack();
-+		return 1;}
++		printk(KERN_WARNING "<<< reserve_perfctr_nmi() failed at test_and_set_bit(%u, %p).\n", counter, perfctr_nmi_owner);
+ 		return 1;
++	}
++	printk(KERN_WARNING "<<< reserve_perfctr_nmi(%u) (counter=%u)\n", msr, counter);
  	return 0;
  }
  EXPORT_SYMBOL(reserve_perfctr_nmi);
+@@ -123,6 +129,8 @@ void release_perfctr_nmi(unsigned int msr)
+ 	unsigned int counter;
+ 
+ 	counter = nmi_perfctr_msr_to_bit(msr);
++	printk(KERN_WARNING "!!! release_perfctr_nmi(%u) (counter=%u). Stack:\n", msr, counter);
++	dump_stack();
+ 	/* register not managed by the allocator? */
+ 	if (counter > NMI_MAX_COUNTER_BITS)
+ 		return;
+@@ -136,12 +144,16 @@ int reserve_evntsel_nmi(unsigned int msr)
+ 	unsigned int counter;
+ 
+ 	counter = nmi_evntsel_msr_to_bit(msr);
++	printk(KERN_WARNING ">>> reserve_evntsel_nmi(%u) (counter=%u). Stack:\n", msr, counter);
++	dump_stack();
+ 	/* register not managed by the allocator? */
+ 	if (counter > NMI_MAX_COUNTER_BITS)
+ 		return 1;
+ 
+ 	if (!test_and_set_bit(counter, evntsel_nmi_owner))
+ 		return 1;
++
++	printk(KERN_WARNING "<<< reserve_evntsel_nmi(%u) (counter=%u). Stack:\n", msr, counter);
+ 	return 0;
+ }
+ EXPORT_SYMBOL(reserve_evntsel_nmi);
+@@ -151,6 +163,8 @@ void release_evntsel_nmi(unsigned int msr)
+ 	unsigned int counter;
+ 
+ 	counter = nmi_evntsel_msr_to_bit(msr);
++	printk(KERN_WARNING "Called release_evntsel_nmi(%u) (counter=%u). Stack:\n", msr, counter);
++	dump_stack();
+ 	/* register not managed by the allocator? */
+ 	if (counter > NMI_MAX_COUNTER_BITS)
+ 		return;
 diff --git a/arch/x86/syscalls/syscall_64.tbl b/arch/x86/syscalls/syscall_64.tbl
 index 38ae65d..3653bfe 100644
 --- a/arch/x86/syscalls/syscall_64.tbl
