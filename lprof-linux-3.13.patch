@@ -49,10 +49,10 @@ index 6abc172..f8df6fb 100644
  	 * and set up the GDT descriptor:
 diff --git a/arch/x86/kernel/cpu/lprof.c b/arch/x86/kernel/cpu/lprof.c
 new file mode 100644
-index 0000000..e95786d
+index 0000000..9161784
 --- /dev/null
 +++ b/arch/x86/kernel/cpu/lprof.c
-@@ -0,0 +1,496 @@
+@@ -0,0 +1,494 @@
 +/*
 + * Kernel support for LambdaProfiler, a userland, performance
 + * counter-based counter profiler.  Allows users with to configure
@@ -326,19 +326,17 @@ index 0000000..e95786d
 +}
 +
 +int init_lprof(void) {
-+    union cpuid10_edx edx;
-+    union cpuid10_eax eax;
-+    unsigned int dummy1, dummy2;
++    struct x86_pmu_capability cap;
 +
 +    if (!cpu_has(&boot_cpu_data, X86_FEATURE_ARCH_PERFMON)) {
 +	return -ENODEV;
 +    }
 +
 +    //Get CPU info about performance counters and events
-+    //cpuid(10, &eax.full, &dummy1, &dummy2, &edx.full);
-+    //num_perf_counters = eax.split.num_counters;
-+    num_perf_counters = x86_pmu.num_counters;
-+    printk("LPROF: number of supported counters: %\n", num_perf_counters);
++    perf_get_x86_pmu_capability(&cap);
++    num_perf_counters = cap.num_counters_gp;
++    printk("LPROF: number of supported counters: %d\n", num_perf_counters);
++
 +    if (num_perf_counters > MAX_PMCS) {
 +	printk("LProf Warning: found %d counters, max of %d supported. Limiting.\n",
 +	       num_perf_counters, MAX_PMCS);
@@ -363,7 +361,7 @@ index 0000000..e95786d
 +	     unsigned long long config) {
 +    unsigned long long pgc;
 +
-+    if (counter >= num_perf_counters) {
++    if (counter > num_perf_counters) {
 +    	printk(KERN_WARNING "lp_start(): counter %u is more than num_perf_counters=%u\n", counter, num_perf_counters);
 +	return -ENODEV;
 +    }
