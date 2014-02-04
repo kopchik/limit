@@ -49,7 +49,7 @@ index 6abc172..f8df6fb 100644
  	 * and set up the GDT descriptor:
 diff --git a/arch/x86/kernel/cpu/lprof.c b/arch/x86/kernel/cpu/lprof.c
 new file mode 100644
-index 0000000..9161784
+index 0000000..acda1f9
 --- /dev/null
 +++ b/arch/x86/kernel/cpu/lprof.c
 @@ -0,0 +1,494 @@
@@ -329,7 +329,7 @@ index 0000000..9161784
 +    struct x86_pmu_capability cap;
 +
 +    if (!cpu_has(&boot_cpu_data, X86_FEATURE_ARCH_PERFMON)) {
-+	return -ENODEV;
++      return -ENODEV;
 +    }
 +
 +    //Get CPU info about performance counters and events
@@ -338,13 +338,13 @@ index 0000000..9161784
 +    printk("LPROF: number of supported counters: %d\n", num_perf_counters);
 +
 +    if (num_perf_counters > MAX_PMCS) {
-+	printk("LProf Warning: found %d counters, max of %d supported. Limiting.\n",
-+	       num_perf_counters, MAX_PMCS);
-+	num_perf_counters = MAX_PMCS;
++      printk("LPROF Warning: found %d counters, max of %d supported. Limiting.\n",
++      num_perf_counters, MAX_PMCS);
++      num_perf_counters = MAX_PMCS;
 +    }
 +    perf_counter_info = kmalloc(sizeof(perf_cntr_t) * num_perf_counters, GFP_KERNEL);
 +    memset(perf_counter_info, 0, sizeof(perf_cntr_t) * num_perf_counters);
-+    printk("LProf init: found %d counters\n", num_perf_counters);
++    printk("LPROF init: found %d counters\n", num_perf_counters);
 +    return 0;
 +}
 +
