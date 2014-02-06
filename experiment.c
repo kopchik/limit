@@ -67,7 +67,7 @@ int main(int argc, char *argv[]) {
 
     /* stop tasks */
     for(int i=0; i<numpids; i++) {
-      fprintf(stderr, "killing pid %d\n", pids[i]);
+      fprintf(stderr, "sending SIGSTOP to %d\n", pids[i]);
       if (kill(pids[i], SIGSTOP)) {
         err(2, "kill(%d, SIGSTOP)", pids[i]);
       }
@@ -102,7 +102,7 @@ int main(int argc, char *argv[]) {
     
     /* send CONT to stopped tasks */
     for(int i=0; i<numpids; i++) {
-      fprintf(stderr, "killing pid %d\n", pids[i]);
+      fprintf(stderr, "sending SIGCONT to %d\n", pids[i]);
       if (kill(pids[i], SIGSTOP)) {
         err(2, "kill(%d, SIGSTOP)", pids[i]);
       }
