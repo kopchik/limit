@@ -73,7 +73,7 @@ int lprof_init(unsigned int num, ...) {
     for (ctr=0; ctr<num; ctr++) {
 	size_t count = 0;
 	conf = va_arg(args, unsigned int) & 0xFFFF;;
-	printf("Configuring counter %d as %04x\n", ctr, conf);
+	fprintf(stderr, "Configuring counter %d as %04x\n", ctr, conf);
 	do {
 	    conf |= PERFMON_EVENTSEL_USR;
 	    confs[ctr] = conf;
