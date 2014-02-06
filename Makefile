@@ -1,6 +1,6 @@
-VER=1.3
+VER=1.4
 NAME=liblimit-$(VER)
-CFLAGS=-I/lib/modules/`uname -r`/build/include -I. -L. -m64
+CFLAGS=-I/lib/modules/`uname -r`/build/include -I. -L. -m64 -O4 -std=gnu99
 LDFLAGS=-m64 -L.
 ASFLAGS=-m64 -I.
 
@@ -12,10 +12,10 @@ liblimit.a: limit.o limit_asm.o
 	ar -crs $@ $^
 
 hello: liblimit.a hello.c
-	$(CC) $(CFLAGS) -O0 -save-temps -o hello hello.c -llimit -ldl
+	$(CC) $(CFLAGS) -o hello hello.c -llimit -ldl
 
 experiment: experiment.c
-	$(CC) $(CFLAGS) -std=gnu99 -O3 -o experiment experiment.c -llimit -ldl
+	$(CC) $(CFLAGS) -o experiment experiment.c -llimit -ldl
 
 
 install:
