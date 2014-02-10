@@ -1,22 +1,27 @@
 VER=1.4
 NAME=liblimit-$(VER)
-CFLAGS=-I/lib/modules/`uname -r`/build/include -I. -L. -m64 -O3 -std=gnu99
-LDFLAGS=-m64 -L.
-ASFLAGS=-m64 -I.
+CFLAGS= -O3 -std=gnu99
 CC=clang
 
-all: liblimit.a hello experiment
+LPROF ?= 1
+ifeq ($(LPROF), 1)
+  LDFLAGS +=  -L.
+  ASFLAGS += -I.
+  CFLAGS  += -I/lib/modules/`uname -r`/build/include -I. -L. -llimit -ldl
+  CFLAGS  += -DENABLE_LPROF=1
+  all: liblimit.a experiment
+else
+  all: experiment
+endif
+
 
 limit.o: limit.h
 limit_asm.o: limit.h
 liblimit.a: limit.o limit_asm.o
 	ar -crs $@ $^
 
-hello: liblimit.a hello.c
-	$(CC) $(CFLAGS) -o hello hello.c -llimit -ldl
-
 experiment: experiment.c
-	$(CC) $(CFLAGS) -o experiment experiment.c -llimit -ldl
+	$(CC) $(CFLAGS) -o experiment experiment.c
 
 
 install:
