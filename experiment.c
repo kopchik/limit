@@ -6,10 +6,12 @@
 #include <err.h>
 #include "limit.h"
 
+#ifndef ENABLE_LPROF
 #define ENABLE_LPROF 0
+#endif
 
 #define SAMPLES 1000
-#define PERIOD (172000*4)
+#define PERIOD (172000*1)
 #define SIZE 1024
 
 
