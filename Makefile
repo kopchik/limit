@@ -23,6 +23,9 @@ liblimit.a: limit.o limit_asm.o
 experiment: experiment.c
 	$(CC) $(CFLAGS) -o experiment experiment.c
 
+stabtest: experiment
+	{ for x in `seq 10`; do time taskset -c 0 ./experiment; done } 2>&1 | grep real
+
 
 install:
 	cp liblimit.a /usr/local/lib
