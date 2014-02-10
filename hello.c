@@ -2,6 +2,7 @@
 #include <limit.h>
 #include <stdint.h>
 #include <stdio.h> 
+#include <ctype.h>
  
 #define str1 "Hello World, Hello World, Hello World"
 #define str2 "HELLOWORLDHELLOWORLDHELLOWORLDHELLOWO"

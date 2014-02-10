@@ -1,8 +1,9 @@
 VER=1.4
 NAME=liblimit-$(VER)
-CFLAGS=-I/lib/modules/`uname -r`/build/include -I. -L. -m64 -O4 -std=gnu99
+CFLAGS=-I/lib/modules/`uname -r`/build/include -I. -L. -m64 -O3 -std=gnu99
 LDFLAGS=-m64 -L.
 ASFLAGS=-m64 -I.
+CC=clang
 
 all: liblimit.a hello experiment
 
@@ -23,4 +24,4 @@ install:
 	cp limit.h /usr/local/include
 
 clean:
-	rm -f *.o *.i *.a *.s hello
+	rm -f *.o *.i *.a *.s hello experiment
