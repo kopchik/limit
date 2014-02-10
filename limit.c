@@ -49,9 +49,9 @@ static void registerCS(int i, void* b, void* e) {
     int rc;
     size_t cs_len = (uint64_t)e - (uint64_t)b;
     rc = sys_lprof_config(LPROF_DFN_CS, i, cs_len, 
-			  (void*)b);
+        (void*)b);
     if (rc < 0)
-	perror("Error registering CS");
+  perror("Error registering CS");
 }
 
 // Initialize counters
@@ -71,19 +71,19 @@ int lprof_init(unsigned int num, ...) {
     //Configure each counter, staring with 1
     va_start(args, num);
     for (ctr=0; ctr<num; ctr++) {
-	size_t count = 0;
-	conf = va_arg(args, unsigned int) & 0xFFFF;;
-	fprintf(stderr, "Configuring counter %d as %04x\n", ctr, conf);
-	do {
-	    conf |= PERFMON_EVENTSEL_USR;
-	    confs[ctr] = conf;
-	    rc = sys_lprof_config(LPROF_START, ctr, conf, &__lp_stats);
-	    count++;
-	} while (rc < 0 && errno == EBUSY && count < 5);
+  size_t count = 0;
+  conf = va_arg(args, unsigned int) & 0xFFFF;;
+  fprintf(stderr, "Configuring counter %d as %04x\n", ctr, conf);
+  do {
+      conf |= PERFMON_EVENTSEL_USR;
+      confs[ctr] = conf;
+      rc = sys_lprof_config(LPROF_START, ctr, conf, &__lp_stats);
+      count++;
+  } while (rc < 0 && errno == EBUSY && count < 5);
 
-	if (rc < 0) {
-	    perror("Error configuring counter");
-	}
+  if (rc < 0) {
+      perror("Error configuring counter");
+  }
     }
     va_end(args);
 
@@ -102,7 +102,8 @@ void lprof_debug(void) {
 void lprof_close() {
     int i;
     for (i=0; i<num_ctrs; i++)
-	sys_lprof_config(LPROF_STOP, i, 0, 0);
+  sys_lprof_config(LPROF_STOP, i, 0, 0);
+    fprintf(stderr, "counters closed\n");
 }
 
 struct notif_list {
@@ -119,7 +120,7 @@ void lprof_thread_notify(thread_notif notif, void* data) {
     ni->notif = notif;
     
     do {
-	ni->next = lprof_notif_list;
+  ni->next = lprof_notif_list;
     } while (!__sync_bool_compare_and_swap(&lprof_notif_list, ni->next, ni));
 }
 
@@ -127,9 +128,9 @@ void lprof_thread_notify(thread_notif notif, void* data) {
 #include <pthread.h>
 
 static int (*real_pthread_create)(pthread_t*, 
-				  const pthread_attr_t *,
-				  void *(*start_routine) (void *),
-				  void*) = NULL;
+          const pthread_attr_t *,
+          void *(*start_routine) (void *),
+          void*) = NULL;
 
 typedef struct {
     void* (*user_routine)(void*);
@@ -142,17 +143,17 @@ void* limit_thread(void* arg) {
     size_t i;
     ut = (user_thread*)arg;
     for (i=1; i<=num_ctrs; i++) {
-	int rc = sys_lprof_config(LPROF_START, i, confs[i], &__lp_stats);
-	if (rc != 0) {
-	    perror("Attempting to start counter on new thread");
-	}
+  int rc = sys_lprof_config(LPROF_START, i, confs[i], &__lp_stats);
+  if (rc != 0) {
+      perror("Attempting to start counter on new thread");
+  }
     }
 
     // Notify that new thread is in town
     nl = lprof_notif_list;
     while (nl) {
-	nl->notif(0, nl->data);
-	nl = nl->next;
+  nl->notif(0, nl->data);
+  nl = nl->next;
     }
 
     printf("Limit_thread start\n");
@@ -162,8 +163,8 @@ void* limit_thread(void* arg) {
     // Notify that new thread is leaving
     nl = lprof_notif_list;
     while (nl) {
-	nl->notif(1, nl->data);
-	nl = nl->next;
+  nl->notif(1, nl->data);
+  nl = nl->next;
     }
     
     free(ut);
@@ -180,8 +181,8 @@ void pthread_exit(void* ptr)
     // Notify that new thread is leaving
     nl = lprof_notif_list;
     while (nl) {
-	nl->notif(1, nl->data);
-	nl = nl->next;
+  nl->notif(1, nl->data);
+  nl = nl->next;
     }
     
     free(ut);
@@ -190,13 +191,13 @@ void pthread_exit(void* ptr)
 }
 
 int pthread_create(pthread_t *newthread,
-		   const pthread_attr_t *attr,
-		   void *(*start_routine) (void *),
-		   void *arg) 
+       const pthread_attr_t *attr,
+       void *(*start_routine) (void *),
+       void *arg) 
 {
     user_thread* ut = NULL;
     if (!real_pthread_create) {
-	real_pthread_create = dlsym(RTLD_NEXT, "pthread_create");
+  real_pthread_create = dlsym(RTLD_NEXT, "pthread_create");
     }
 
     ut = malloc(sizeof(user_thread));

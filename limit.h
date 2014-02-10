@@ -81,6 +81,8 @@ extern __thread struct lprof_stats __lp_stats;
 int lprof_init(unsigned int num, ...);
 // Close LiMiT
 void lprof_close();
+// Print some debug information
+void lprof_debug(void);
 
 // LiMiT must be notified when new threads are created
 typedef void (*thread_notif)(char, void*);

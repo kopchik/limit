@@ -6,11 +6,15 @@
 #include <err.h>
 #include "limit.h"
 
+#ifndef ENABLE_LPROF
+#define ENABLE_LPROF 0
+#endif
+
 #define SAMPLES 1000
-#define PERIOD 172000
+#define PERIOD (172000*1)
 #define SIZE 1024
 
-#define ENABLE_LPROF 1
+
 void *xcalloc(size_t nmemb, size_t size) {
   void *r;
   if ((r=calloc(nmemb, size)) == NULL) {
@@ -20,9 +24,9 @@ void *xcalloc(size_t nmemb, size_t size) {
 }
 
 int main(int argc, char *argv[]) {
-  uint64_t ins=0,ins_delta=0, cycles=0, cycles_delta=0;
+  uint64_t cycles=0, cycles_delta=0;
 #if ENABLE_LPROF
-  if (lprof_init(2, EV_INSTR, EV_CYCLES)) {
+  if (lprof_init(1, EV_CYCLES)) {
     err(2, "lprof_init");
   }
 #endif
@@ -34,13 +38,13 @@ int main(int argc, char *argv[]) {
   for (int i=0; i< SIZE*SIZE; i++) {
     A[i] = 1;
     B[i] = 1;
-    //C[i] = 0;
+    C[i] = 0;
   }
   fprintf(stderr, "init done\n");
 
 
   if (argc==2 && strcmp(argv[1], "polute") == 0) {
-    while (1) {
+    //while (1) {
       fprintf(stderr, "polluting\n");
       for (int row=0; row<SIZE; row++) {
         for (int col=0; col<SIZE; col++) {
@@ -51,7 +55,7 @@ int main(int argc, char *argv[]) {
           C[row*SIZE+col] = temp;
         }
       }
-    }
+    //}
   }
   else {
     fprintf(stderr, "profiling\n");
@@ -67,15 +71,15 @@ int main(int argc, char *argv[]) {
 
     /* stop tasks */
     for(int i=0; i<numpids; i++) {
-      fprintf(stderr, "killing pid %d\n", pids[i]);
+      fprintf(stderr, "sending SIGSTOP to %d\n", pids[i]);
       if (kill(pids[i], SIGSTOP)) {
         err(2, "kill(%d, SIGSTOP)", pids[i]);
       }
     }
 
 #if ENABLE_LPROF
-    lprofd(0, ins_delta, ins);
-    lprofd(1, cycles_delta, cycles);
+    lprofd(0, cycles_delta, cycles);
+    atexit(lprof_close);
 #endif
     uint64_t cnt=1, cur=0;
     uint64_t measurements[SAMPLES];
@@ -89,7 +93,7 @@ int main(int argc, char *argv[]) {
 #if ENABLE_LPROF
           if (cnt++ % PERIOD == 0 && cur<SAMPLES) {
             //lprofd(0, ins_delta, ins);
-            lprofd(1, cycles_delta, cycles);
+            lprofd(0, cycles_delta, cycles);
             //ipc = (double)ins_delta/cycles_delta;
             //printf("ins %lu\n", ins_delta);
             measurements[cur++] = cycles_delta;
@@ -102,7 +106,7 @@ int main(int argc, char *argv[]) {
     
     /* send CONT to stopped tasks */
     for(int i=0; i<numpids; i++) {
-      fprintf(stderr, "killing pid %d\n", pids[i]);
+      fprintf(stderr, "sending SIGCONT to %d\n", pids[i]);
       if (kill(pids[i], SIGSTOP)) {
         err(2, "kill(%d, SIGSTOP)", pids[i]);
       }
