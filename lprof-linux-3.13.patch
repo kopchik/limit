@@ -548,15 +548,15 @@ index 0000000..acda1f9
 +    }
 +}
 diff --git a/arch/x86/kernel/cpu/perfctr-watchdog.c b/arch/x86/kernel/cpu/perfctr-watchdog.c
-index 2e8caf0..68f7687 100644
+index 2e8caf0..bcd2c4c 100644
 --- a/arch/x86/kernel/cpu/perfctr-watchdog.c
 +++ b/arch/x86/kernel/cpu/perfctr-watchdog.c
 @@ -108,12 +108,18 @@ int reserve_perfctr_nmi(unsigned int msr)
  	unsigned int counter;
  
  	counter = nmi_perfctr_msr_to_bit(msr);
-+	printk(KERN_WARNING ">>> reserve_perfctr_nmi(%u) (counter=%u). Stack:\n", msr, counter);
-+	dump_stack();
++	//printk(KERN_WARNING ">>> reserve_perfctr_nmi(%u) (counter=%u). Stack:\n", msr, counter);
++	//dump_stack();
  	/* register not managed by the allocator? */
 -	if (counter > NMI_MAX_COUNTER_BITS)
 -		return 1;
@@ -569,7 +569,7 @@ index 2e8caf0..68f7687 100644
 +		printk(KERN_WARNING "<<< reserve_perfctr_nmi() failed at test_and_set_bit(%u, %p).\n", counter, perfctr_nmi_owner);
  		return 1;
 +	}
-+	printk(KERN_WARNING "<<< reserve_perfctr_nmi(%u) (counter=%u)\n", msr, counter);
++	//printk(KERN_WARNING "<<< reserve_perfctr_nmi(%u) (counter=%u)\n", msr, counter);
  	return 0;
  }
  EXPORT_SYMBOL(reserve_perfctr_nmi);
@@ -577,8 +577,8 @@ index 2e8caf0..68f7687 100644
  	unsigned int counter;
  
  	counter = nmi_perfctr_msr_to_bit(msr);
-+	printk(KERN_WARNING "!!! release_perfctr_nmi(%u) (counter=%u). Stack:\n", msr, counter);
-+	dump_stack();
++	//printk(KERN_WARNING "!!! release_perfctr_nmi(%u) (counter=%u). Stack:\n", msr, counter);
++	//dump_stack();
  	/* register not managed by the allocator? */
  	if (counter > NMI_MAX_COUNTER_BITS)
  		return;
@@ -586,8 +586,8 @@ index 2e8caf0..68f7687 100644
  	unsigned int counter;
  
  	counter = nmi_evntsel_msr_to_bit(msr);
-+	printk(KERN_WARNING ">>> reserve_evntsel_nmi(%u) (counter=%u). Stack:\n", msr, counter);
-+	dump_stack();
++	//printk(KERN_WARNING ">>> reserve_evntsel_nmi(%u) (counter=%u). Stack:\n", msr, counter);
++	//dump_stack();
  	/* register not managed by the allocator? */
  	if (counter > NMI_MAX_COUNTER_BITS)
  		return 1;
@@ -595,7 +595,7 @@ index 2e8caf0..68f7687 100644
  	if (!test_and_set_bit(counter, evntsel_nmi_owner))
  		return 1;
 +
-+	printk(KERN_WARNING "<<< reserve_evntsel_nmi(%u) (counter=%u). Stack:\n", msr, counter);
++	//printk(KERN_WARNING "<<< reserve_evntsel_nmi(%u) (counter=%u). Stack:\n", msr, counter);
  	return 0;
  }
  EXPORT_SYMBOL(reserve_evntsel_nmi);
@@ -603,8 +603,8 @@ index 2e8caf0..68f7687 100644
  	unsigned int counter;
  
  	counter = nmi_evntsel_msr_to_bit(msr);
-+	printk(KERN_WARNING "Called release_evntsel_nmi(%u) (counter=%u). Stack:\n", msr, counter);
-+	dump_stack();
++	//printk(KERN_WARNING "Called release_evntsel_nmi(%u) (counter=%u). Stack:\n", msr, counter);
++	//dump_stack();
  	/* register not managed by the allocator? */
  	if (counter > NMI_MAX_COUNTER_BITS)
  		return;
