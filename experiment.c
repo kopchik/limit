@@ -11,13 +11,17 @@
 #endif
 
 #define SAMPLES 1000
-#define PERIOD (100000*1)
+#define PERIOD 512
+//#define PERIOD 1
 #define SIZE 1024
 
+double A[SIZE*SIZE];
+double B[SIZE*SIZE];
+double volatile C[SIZE*SIZE];
 
 typedef struct Sample {
-  uint64_t cycles;
   uint64_t instr;
+  uint64_t cycles;
 } Sample;
 Sample measurements[SAMPLES];
 
@@ -29,17 +33,23 @@ void *xcalloc(size_t nmemb, size_t size) {
   return r;
 }
 
-int main(int argc, char *argv[]) {
-  uint64_t cycles=0, cycles_delta=0, instr, instr_delta=0;
-#if ENABLE_LPROF
-  if (lprof_init(2, EV_CYCLES, EV_INSTR)) {
-    err(2, "lprof_init");
-  }
-#endif
+void pollute(void) {
+      for (int row=0; row<SIZE; row++) {
+        for (int col=0; col<SIZE; col++) {
+          double temp = 0.0;
+          for (int k=0; k<SIZE; k++) {
+            temp += A[row*SIZE+k]*B[k*SIZE+col];
+          }
+          C[row*SIZE+col] = temp;
+        }
+      }
+}
 
-  double *A = xcalloc(SIZE*SIZE, sizeof(double));
-  double *B = xcalloc(SIZE*SIZE, sizeof(double));
-  double volatile *C = xcalloc(SIZE*SIZE, sizeof(double));
+int main(int argc, char *argv[]) {
+#if ENABLE_LPROF
+  uint64_t cycles=0, cycles_delta=0, instr=0, instr_delta=0;
+  uint64_t cnt=1, cur=0;
+#endif
 
   for (int i=0; i< SIZE*SIZE; i++) {
     A[i] = 1;
@@ -50,20 +60,15 @@ int main(int argc, char *argv[]) {
 
 
   if (argc==2 && strcmp(argv[1], "polute") == 0) {
-    //while (1) {
-      fprintf(stderr, "polluting\n");
-      for (int row=0; row<SIZE; row++) {
-        for (int col=0; col<SIZE; col++) {
-          double temp = 0.0;
-          for (int k=0; k<SIZE; k++) {
-            temp += A[row*SIZE+k]*B[k*SIZE+col];
-          }
-          C[row*SIZE+col] = temp;
-        }
-      }
-    //}
+    fprintf(stderr, "polluting\n");
+    for (int x=0; x<3; x++) {
+      pollute();
+    }
+    return 0;
   }
   else {
+    fprintf(stderr, "warm-up\n");
+    pollute();
     fprintf(stderr, "profiling\n");
     pid_t pids[10];
     int numpids=argc-1;
@@ -84,35 +89,38 @@ int main(int argc, char *argv[]) {
     }
 
 #if ENABLE_LPROF
-    lprofd(0, cycles_delta, cycles);
+    if (lprof_init(2, EV_INSTR, EV_CYCLES)) {
+      err(2, "lprof_init");
+    }
     lprofd(0, instr_delta, instr);
+    lprofd(1, cycles_delta, cycles);
     atexit(lprof_close);
 #endif
-    uint64_t cnt=1, cur=0;
-    double ipc;
 
     for (int row=0; row<SIZE; row++) {
       for (int col=0; col<SIZE; col++) {
         double temp = 0.0;
         for (int k=0; k<SIZE; k++) {
           temp += A[row*SIZE+k]*B[k*SIZE+col];
+        }
 #if ENABLE_LPROF
-          if (cur<SAMPLES && cnt++ % PERIOD == 0) {
-            //lprofd(0, ins_delta, ins);
-            lprofd(0, cycles_delta, cycles);
-            //lprofd(0, instr_delta, instr);
-            lprof(1, instr);
-            //ipc = (double)ins_delta/cycles_delta;
-            //printf("ins %lu\n", ins_delta);
+          cnt++;
+          if (cur>=SAMPLES) {
+            goto END; }
+          if (cur<SAMPLES && cnt % PERIOD == 0) {
+            lprofd(0, instr_delta, instr);
+            lprofd(1, cycles_delta, cycles);
+            measurements[cur].instr  = instr_delta;
             measurements[cur].cycles = cycles_delta;
-            measurements[cur].instr  = instr;
             cur++;
           }
 #endif
-        }
+        
         C[row*SIZE+col] = temp;
       }
     }
+
+END:
     
     /* send CONT to stopped tasks */
     for(int i=0; i<numpids; i++) {
@@ -126,13 +134,14 @@ int main(int argc, char *argv[]) {
 #if ENABLE_LPROF
     Sample *sample=measurements;
     for (uint64_t i=0; i<cur; i++, sample++) {
-      //printf("%lf\n", measurements[i]);
-      printf("%lu,%lu\n", sample->cycles, sample->instr);
+      //printf("%lu,%lu\n", sample->cycles, sample->instr);
+      printf("%lf,%lu\n", ((double)sample->instr)/sample->cycles, sample->cycles);
     }
 #endif
 
   }
-  free(A);
-  free(B);
+
+  //free(A);
+  //free(B);
   //free(C);
 }
