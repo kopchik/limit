@@ -1,0 +1,18 @@
+diff --git a/.builtin-stat.c.swp b/.builtin-stat.c.swp
+index ec374f1..4e1475e 100644
+Binary files a/.builtin-stat.c.swp and b/.builtin-stat.c.swp differ
+diff --git a/builtin-stat.c b/builtin-stat.c
+index ee0d565..78dbf3e 100644
+--- a/builtin-stat.c
++++ b/builtin-stat.c
+@@ -1707,8 +1707,8 @@ int cmd_stat(int argc, const char **argv, const char *prefix __maybe_unused)
+ 		}
+ 		goto out;
+ 	}
+-	if (interval && interval < 100) {
+-		pr_err("print interval must be >= 100ms\n");
++	if (interval && interval < 1) {
++		pr_err("print interval must be >= 1ms\n");
+ 		parse_options_usage(stat_usage, options, "I", 1);
+ 		goto out_free_maps;
+ 	}
